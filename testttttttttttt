@@ -33,6 +33,12 @@ local function colorToString(color)
     end
 end
 
+-- Function to check if a string ends with "Aura" (case insensitive)
+local function isAuraName(name)
+    local lowerName = string.lower(name)
+    return string.sub(lowerName, -4) == "aura"
+end
+
 local function extractItemsByRarity()
     -- Create tables to store items by rarity and type
     local petsByRarity = {}
@@ -48,7 +54,6 @@ local function extractItemsByRarity()
             -- Try to find the required values
             local nameValue = itemEntry:FindFirstChild("nameValue")
             local rarityValue = itemEntry:FindFirstChild("rarityValue")
-            local itemValue = itemEntry:FindFirstChild("itemValue")
             
             if nameValue and rarityValue and nameValue:IsA("StringValue") and rarityValue:IsA("StringValue") then
                 local itemName = nameValue.Value
@@ -56,14 +61,8 @@ local function extractItemsByRarity()
                 
                 -- Skip excluded names
                 if not excludeNames[itemName] then
-                    -- Check if it's an aura by looking for itemValue
-                    local isAura = false
-                    local colorValue = nil
-                    
-                    if itemValue and itemValue:IsA("StringValue") then
-                        isAura = true
-                        colorValue = itemEntry:FindFirstChild("colorValue")
-                    end
+                    -- Check if it's an aura by looking at the name
+                    local isAura = isAuraName(itemName)
                     
                     if isAura then
                         -- Initialize rarity table for auras if it doesn't exist
@@ -73,6 +72,7 @@ local function extractItemsByRarity()
                         
                         -- Add aura to appropriate rarity table with its folder and color
                         local colorStr = ""
+                        local colorValue = itemEntry:FindFirstChild("colorValue")
                         if colorValue and colorValue:IsA("Color3Value") then
                             colorStr = " (Color: " .. colorToString(colorValue.Value) .. ")"
                         end
@@ -171,7 +171,7 @@ local function extractItemsByRarity()
                 end
             end
             
-            if not found then
+            if not found and next(items) then
                 -- Add rarity header for this additional rarity
                 result = result .. rarity .. " " .. itemType .. "\n"
                 
