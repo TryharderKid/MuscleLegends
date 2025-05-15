@@ -1,0 +1,210 @@
+local crystalChances = game:GetService("ReplicatedStorage").crystalChances
+
+-- Names to exclude
+local excludeNames = {
+    ["A. Gnatomy"] = true,
+    ["Alien Girl"] = true,
+    ["Gold Warrior"] = true,
+    ["Green-Fly"] = true,
+    ["Hank"] = true,
+    ["Ice Ice"] = true,
+    ["Mask Of Gold"] = true,
+    ["Masked Marksman"] = true,
+    ["Mr. Serious"] = true,
+    ["Sir Flame"] = true,
+    ["Sky Hawk"] = true,
+    ["Screaming Bones"] = true,
+    ["Slitherman"] = true,
+    ["Smiley"] = true,
+    ["Chops"] = true,
+    ["Boy Wonder"] = true,
+    ["Cool Guy Larry"] = true
+}
+
+local function extractItemsByRarity()
+    -- Create tables to store items by rarity and type
+    local petsByRarity = {}
+    local aurasByRarity = {}
+    
+    -- Iterate through each egg/crystal folder in crystalChances
+    for _, itemFolder in pairs(crystalChances:GetChildren()) do
+        local folderName = itemFolder.Name
+        print("Processing folder: " .. folderName)
+        
+        -- Iterate through each item entry in the folder
+        for _, itemEntry in pairs(itemFolder:GetChildren()) do
+            -- Try to find the required values
+            local nameValue = itemEntry:FindFirstChild("nameValue")
+            local rarityValue = itemEntry:FindFirstChild("rarityValue")
+            local itemValue = itemEntry:FindFirstChild("itemValue")
+            
+            if nameValue and rarityValue and nameValue:IsA("StringValue") and rarityValue:IsA("StringValue") then
+                local itemName = nameValue.Value
+                local rarity = rarityValue.Value
+                
+                -- Skip excluded names
+                if not excludeNames[itemName] then
+                    -- Check if it's an aura by looking for itemValue and colorValue
+                    local isAura = false
+                    local colorValue = nil
+                    
+                    if itemValue and itemValue:IsA("StringValue") then
+                        isAura = true
+                        colorValue = itemEntry:FindFirstChild("colorValue")
+                    end
+                    
+                    if isAura then
+                        -- Initialize rarity table for auras if it doesn't exist
+                        if not aurasByRarity[rarity] then
+                            aurasByRarity[rarity] = {}
+                        end
+                        
+                        -- Add aura to appropriate rarity table with its folder and color
+                        local colorStr = ""
+                        if colorValue and colorValue:IsA("StringValue") then
+                            colorStr = " (Color: " .. colorValue.Value .. ")"
+                        end
+                        
+                        aurasByRarity[rarity][itemName] = folderName .. colorStr
+                    else
+                        -- Initialize rarity table for pets if it doesn't exist
+                        if not petsByRarity[rarity] then
+                            petsByRarity[rarity] = {}
+                        end
+                        
+                        -- Add pet to appropriate rarity table with its folder
+                        petsByRarity[rarity][itemName] = folderName
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Format the output
+    local result = ""
+    
+    -- Define rarity order (add any missing rarities to this list)
+    local rarityOrder = {
+        "Basic", 
+        "Advanced", 
+        "Rare", 
+        "Epic", 
+        "Unique", 
+        "Legendary", 
+        "Mythical", 
+        "Divine", 
+        "Godly"
+    }
+    
+    -- First add pets grouped by rarity
+    for _, rarity in ipairs(rarityOrder) do
+        local pets = petsByRarity[rarity]
+        
+        if pets and next(pets) then
+            -- Add rarity header for pets
+            result = result .. rarity .. " Pets\n"
+            
+            -- Sort pet names for consistent output
+            local petNames = {}
+            for petName, _ in pairs(pets) do
+                table.insert(petNames, petName)
+            end
+            table.sort(petNames)
+            
+            -- Add each pet with its folder
+            for _, petName in ipairs(petNames) do
+                local folderName = pets[petName]
+                result = result .. petName .. " = " .. folderName .. "\n"
+            end
+            
+            -- Add a blank line after each rarity group
+            result = result .. "\n"
+        end
+    end
+    
+    -- Then add auras grouped by rarity
+    for _, rarity in ipairs(rarityOrder) do
+        local auras = aurasByRarity[rarity]
+        
+        if auras and next(auras) then
+            -- Add rarity header for auras
+            result = result .. rarity .. " Auras\n"
+            
+            -- Sort aura names for consistent output
+            local auraNames = {}
+            for auraName, _ in pairs(auras) do
+                table.insert(auraNames, auraName)
+            end
+            table.sort(auraNames)
+            
+            -- Add each aura with its folder and color
+            for _, auraName in ipairs(auraNames) do
+                local folderInfo = auras[auraName]
+                result = result .. auraName .. " = " .. folderInfo .. "\n"
+            end
+            
+            -- Add a blank line after each rarity group
+            result = result .. "\n"
+        end
+    end
+    
+    -- Check for any rarities not in our predefined order
+    local function checkExtraRarities(itemsByRarity, itemType)
+        for rarity, items in pairs(itemsByRarity) do
+            local found = false
+            for _, orderedRarity in ipairs(rarityOrder) do
+                if rarity == orderedRarity then
+                    found = true
+                    break
+                end
+            end
+            
+            if not found then
+                -- Add rarity header for this additional rarity
+                result = result .. rarity .. " " .. itemType .. "\n"
+                
+                -- Sort item names
+                local itemNames = {}
+                for itemName, _ in pairs(items) do
+                    table.insert(itemNames, itemName)
+                end
+                table.sort(itemNames)
+                
+                -- Add each item with its folder
+                for _, itemName in ipairs(itemNames) do
+                    local folderInfo = items[itemName]
+                    result = result .. itemName .. " = " .. folderInfo .. "\n"
+                end
+                
+                -- Add a blank line
+                result = result .. "\n"
+            end
+        end
+    end
+    
+    checkExtraRarities(petsByRarity, "Pets")
+    checkExtraRarities(aurasByRarity, "Auras")
+    
+    return result
+end
+
+local itemDataString = extractItemsByRarity()
+print("\nExtracted Item Data by Rarity:")
+print(itemDataString)
+
+-- Try to copy to clipboard
+local success, err = pcall(function()
+    setclipboard(itemDataString)
+end)
+
+if success then
+    print("Item data copied to clipboard!")
+else
+    print("Failed to copy to clipboard: " .. tostring(err))
+    
+    -- Try writing to a file if clipboard fails
+    pcall(function()
+        writefile("ItemsByRarity.txt", itemDataString)
+        print("Data written to ItemsByRarity.txt")
+    end)
+end
