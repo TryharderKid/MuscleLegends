@@ -1,0 +1,81 @@
+local crystalChances = game:GetService("ReplicatedStorage").crystalChances
+
+local function extractEggData()
+    local result = ""
+    
+    -- Iterate through each egg folder in crystalChances
+    for _, eggFolder in pairs(crystalChances:GetChildren()) do
+        local eggName = eggFolder.Name
+        print("Processing egg: " .. eggName)
+        
+        -- Create tables to store pets by rarity
+        local petsByRarity = {}
+        
+        -- Iterate through each pet entry in the egg folder
+        for _, petEntry in pairs(eggFolder:GetChildren()) do
+            -- Try to find the required values
+            local nameValue = petEntry:FindFirstChild("nameValue")
+            local rarityValue = petEntry:FindFirstChild("rarityValue")
+            
+            if nameValue and rarityValue and nameValue:IsA("StringValue") and rarityValue:IsA("StringValue") then
+                local petName = nameValue.Value
+                local rarity = rarityValue.Value
+                
+                print("Found pet: " .. petName .. " with rarity: " .. rarity)
+                
+                -- Initialize rarity table if it doesn't exist
+                if not petsByRarity[rarity] then
+                    petsByRarity[rarity] = {}
+                end
+                
+                -- Add pet to appropriate rarity table
+                table.insert(petsByRarity[rarity], petName)
+            else
+                print("Missing required values for pet entry: " .. petEntry.Name)
+            end
+        end
+        
+        -- Add egg name as header
+        result = result .. eggName .. "\n"
+        
+        -- Add pets grouped by rarity
+        for rarity, pets in pairs(petsByRarity) do
+            if #pets > 0 then
+                result = result .. rarity:lower() .. "\n"
+                
+                for _, petName in ipairs(pets) do
+                    result = result .. petName .. " - " .. eggName .. "\n"
+                end
+                
+                result = result .. "\n"
+            end
+        end
+        
+        result = result .. "\n"
+    end
+    
+    return result
+end
+
+local eggDataString = extractEggData()
+print("\nExtracted Egg Data:")
+print(eggDataString)
+
+-- Try to copy to clipboard
+local success, err = pcall(function()
+    setclipboard(eggDataString)
+end)
+
+if success then
+    print("Egg data copied to clipboard!")
+else
+    print("Failed to copy to clipboard: " .. tostring(err))
+    print("Here's the data:")
+    print(eggDataString)
+    
+    -- Try writing to a file if clipboard fails
+    pcall(function()
+        writefile("EggData.txt", eggDataString)
+        print("Data written to EggData.txt")
+    end)
+end
