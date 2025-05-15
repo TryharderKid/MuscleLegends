@@ -1,10 +1,10 @@
-local crystalChances = game:GetService("ReplicatedStorage").crystalChances
+local crystalChances = game:GetService("ReplicatedStorage").cPetShopFolder
 
 -- Names to exclude
 local excludeNames = {
     ["A. Gnatomy"] = true,
     ["Alien Girl"] = true,
-    ["Golden Warrior"] = true,
+    ["Gold Warrior"] = true,
     ["Green-Fly"] = true,
     ["Hank"] = true,
     ["Ice Ice"] = true,
