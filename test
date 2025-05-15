@@ -1,0 +1,72 @@
+local eggModule = require(game:GetService("ReplicatedStorage").crystalChances.Eggs)
+
+local function formatValue(value)
+    if typeof(value) == "string" then
+        return '"' .. value .. '"'
+    elseif typeof(value) == "number" then
+        return tostring(value)
+    elseif typeof(value) == "boolean" then
+        return tostring(value)
+    else
+        return '"' .. tostring(value) .. '"'
+    end
+end
+
+local function extractEggData()
+    local eggData = "{\n"
+    
+    for eggName, eggInfo in pairs(eggModule) do
+        eggData = eggData .. '  ["' .. eggName .. '"] = {\n'
+        
+        -- Check if eggInfo is a table with items
+        if typeof(eggInfo) == "table" then
+            for itemIndex, itemData in pairs(eggInfo) do
+                eggData = eggData .. '    [' .. itemIndex .. '] = {\n'
+                
+                -- Extract the specific values you want
+                if typeof(itemData) == "table" then
+                    -- Add item value if it exists
+                    if itemData.item then
+                        eggData = eggData .. '      ["item"] = ' .. formatValue(itemData.item) .. ',\n'
+                    end
+                    
+                    -- Add chance value if it exists
+                    if itemData.chance then
+                        eggData = eggData .. '      ["chance"] = ' .. formatValue(itemData.chance) .. ',\n'
+                    end
+                    
+                    -- Add name value if it exists
+                    if itemData.name then
+                        eggData = eggData .. '      ["name"] = ' .. formatValue(itemData.name) .. ',\n'
+                    end
+                    
+                    -- Add rarity value if it exists
+                    if itemData.rarity then
+                        eggData = eggData .. '      ["rarity"] = ' .. formatValue(itemData.rarity) .. ',\n'
+                    end
+                    
+                    -- Add any other values that might be present
+                    for key, value in pairs(itemData) do
+                        if key ~= "item" and key ~= "chance" and key ~= "name" and key ~= "rarity" then
+                            eggData = eggData .. '      ["' .. key .. '"] = ' .. formatValue(value) .. ',\n'
+                        end
+                    end
+                else
+                    -- If itemData is not a table, just add it directly
+                    eggData = eggData .. '      ' .. formatValue(itemData) .. ',\n'
+                end
+                
+                eggData = eggData .. '    },\n'
+            end
+        end
+        
+        eggData = eggData .. '  },\n'
+    end
+    
+    eggData = eggData .. '}'
+    return eggData
+end
+
+local eggDataString = extractEggData()
+setclipboard(eggDataString)
+print("Egg data copied to clipboard!")
