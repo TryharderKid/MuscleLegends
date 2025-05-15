@@ -1,12 +1,36 @@
 local crystalChances = game:GetService("ReplicatedStorage").crystalChances
 
+-- Names to exclude
+local excludeNames = {
+    ["A. Gnatomy"] = true,
+    ["Alien Girl"] = true,
+    ["Golden Warrior"] = true,
+    ["Green-Fly"] = true,
+    ["Hank"] = true,
+    ["Ice Ice"] = true,
+    ["Mask Of Gold"] = true,
+    ["Masked Marksman"] = true,
+    ["Mr. Serious"] = true,
+    ["Sir Flame"] = true,
+    ["Sky Hawk"] = true,
+    ["Screaming Bones"] = true,
+    ["Slitherman"] = true,
+    ["Smiley"] = true,
+    ["Chops"] = true,
+    ["Boy Wonder"] = true,
+    ["Cool Guy Larry"] = true
+}
+
 local function extractEggData()
-    local result = ""
+    local result = "return {\n"
     
     -- Iterate through each egg folder in crystalChances
     for _, eggFolder in pairs(crystalChances:GetChildren()) do
         local eggName = eggFolder.Name
         print("Processing egg: " .. eggName)
+        
+        -- Add egg entry to the Lua table
+        result = result .. "  [\"" .. eggName .. "\"] = {\n"
         
         -- Create tables to store pets by rarity
         local petsByRarity = {}
@@ -21,44 +45,41 @@ local function extractEggData()
                 local petName = nameValue.Value
                 local rarity = rarityValue.Value
                 
-                print("Found pet: " .. petName .. " with rarity: " .. rarity)
-                
-                -- Initialize rarity table if it doesn't exist
-                if not petsByRarity[rarity] then
-                    petsByRarity[rarity] = {}
+                -- Skip excluded names
+                if not excludeNames[petName] then
+                    -- Initialize rarity table if it doesn't exist
+                    if not petsByRarity[rarity] then
+                        petsByRarity[rarity] = {}
+                    end
+                    
+                    -- Add pet to appropriate rarity table
+                    table.insert(petsByRarity[rarity], petName)
                 end
-                
-                -- Add pet to appropriate rarity table
-                table.insert(petsByRarity[rarity], petName)
-            else
-                print("Missing required values for pet entry: " .. petEntry.Name)
             end
         end
-        
-        -- Add egg name as header
-        result = result .. eggName .. "\n"
         
         -- Add pets grouped by rarity
         for rarity, pets in pairs(petsByRarity) do
             if #pets > 0 then
-                result = result .. rarity:lower() .. "\n"
+                result = result .. "    [\"" .. rarity .. "\"] = {\n"
                 
                 for _, petName in ipairs(pets) do
-                    result = result .. petName .. " - " .. eggName .. "\n"
+                    result = result .. "      \"" .. petName .. "\",\n"
                 end
                 
-                result = result .. "\n"
+                result = result .. "    },\n"
             end
         end
         
-        result = result .. "\n"
+        result = result .. "  },\n"
     end
     
+    result = result .. "}"
     return result
 end
 
 local eggDataString = extractEggData()
-print("\nExtracted Egg Data:")
+print("\nExtracted Egg Data in Lua format:")
 print(eggDataString)
 
 -- Try to copy to clipboard
@@ -70,12 +91,10 @@ if success then
     print("Egg data copied to clipboard!")
 else
     print("Failed to copy to clipboard: " .. tostring(err))
-    print("Here's the data:")
-    print(eggDataString)
     
     -- Try writing to a file if clipboard fails
     pcall(function()
-        writefile("EggData.txt", eggDataString)
-        print("Data written to EggData.txt")
+        writefile("EggData.lua", eggDataString)
+        print("Data written to EggData.lua")
     end)
 end
