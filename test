@@ -1,4 +1,4 @@
-local eggModule = require(game:GetService("ReplicatedStorage").crystalChances.Eggs)
+local eggModule = require(game:GetService("ReplicatedStorage").crystalChances.Blue Crystal)
 
 local function formatValue(value)
     if typeof(value) == "string" then
