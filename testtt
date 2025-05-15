@@ -1,10 +1,10 @@
-local crystalChances = game:GetService("ReplicatedStorage").cPetShopFolder
+local petShopFolder = game:GetService("ReplicatedStorage").cPetShopFolder
 
 -- Names to exclude
 local excludeNames = {
     ["A. Gnatomy"] = true,
     ["Alien Girl"] = true,
-    ["Gold Warrior"] = true,
+    ["Golden Warrior"] = true,
     ["Green-Fly"] = true,
     ["Hank"] = true,
     ["Ice Ice"] = true,
@@ -33,19 +33,13 @@ local function colorToString(color)
     end
 end
 
--- Function to check if a string ends with "Aura" (case insensitive)
-local function isAuraName(name)
-    local lowerName = string.lower(name)
-    return string.sub(lowerName, -4) == "aura"
-end
-
 local function extractItemsByRarity()
     -- Create tables to store items by rarity and type
     local petsByRarity = {}
     local aurasByRarity = {}
     
-    -- Iterate through each egg/crystal folder in crystalChances
-    for _, itemFolder in pairs(crystalChances:GetChildren()) do
+    -- Iterate through each folder in petShopFolder
+    for _, itemFolder in pairs(petShopFolder:GetChildren()) do
         local folderName = itemFolder.Name
         print("Processing folder: " .. folderName)
         
@@ -61,8 +55,11 @@ local function extractItemsByRarity()
                 
                 -- Skip excluded names
                 if not excludeNames[itemName] then
-                    -- Check if it's an aura by looking at the name
-                    local isAura = isAuraName(itemName)
+                    -- Check if it's an aura by looking for isPowerUp or powerUpColor
+                    local isPowerUp = itemEntry:FindFirstChild("isPowerUp")
+                    local powerUpColor = itemEntry:FindFirstChild("powerUpColor")
+                    local isAura = (isPowerUp and isPowerUp:IsA("BoolValue")) or 
+                                  (powerUpColor and powerUpColor:IsA("Color3Value"))
                     
                     if isAura then
                         -- Initialize rarity table for auras if it doesn't exist
@@ -72,9 +69,8 @@ local function extractItemsByRarity()
                         
                         -- Add aura to appropriate rarity table with its folder and color
                         local colorStr = ""
-                        local colorValue = itemEntry:FindFirstChild("colorValue")
-                        if colorValue and colorValue:IsA("Color3Value") then
-                            colorStr = " (Color: " .. colorToString(colorValue.Value) .. ")"
+                        if powerUpColor and powerUpColor:IsA("Color3Value") then
+                            colorStr = " (Color: " .. colorToString(powerUpColor.Value) .. ")"
                         end
                         
                         aurasByRarity[rarity][itemName] = folderName .. colorStr
