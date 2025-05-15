@@ -21,19 +21,14 @@ local excludeNames = {
     ["Cool Guy Larry"] = true
 }
 
-local function extractEggData()
-    local result = "return {\n"
+local function extractPetsByRarity()
+    -- Create tables to store pets by rarity
+    local petsByRarity = {}
     
     -- Iterate through each egg folder in crystalChances
     for _, eggFolder in pairs(crystalChances:GetChildren()) do
         local eggName = eggFolder.Name
         print("Processing egg: " .. eggName)
-        
-        -- Add egg entry to the Lua table
-        result = result .. "  [\"" .. eggName .. "\"] = {\n"
-        
-        -- Create tables to store pets by rarity
-        local petsByRarity = {}
         
         -- Iterate through each pet entry in the egg folder
         for _, petEntry in pairs(eggFolder:GetChildren()) do
@@ -52,49 +47,62 @@ local function extractEggData()
                         petsByRarity[rarity] = {}
                     end
                     
-                    -- Add pet to appropriate rarity table
-                    table.insert(petsByRarity[rarity], petName)
+                    -- Add pet to appropriate rarity table with its egg
+                    petsByRarity[rarity][petName] = eggName
                 end
             end
         end
-        
-        -- Add pets grouped by rarity
-        for rarity, pets in pairs(petsByRarity) do
-            if #pets > 0 then
-                result = result .. "    [\"" .. rarity .. "\"] = {\n"
-                
-                for _, petName in ipairs(pets) do
-                    result = result .. "      \"" .. petName .. "\",\n"
-                end
-                
-                result = result .. "    },\n"
-            end
-        end
-        
-        result = result .. "  },\n"
     end
     
-    result = result .. "}"
+    -- Format the output
+    local result = ""
+    
+    -- Sort rarities for consistent output (optional)
+    local rarities = {}
+    for rarity, _ in pairs(petsByRarity) do
+        table.insert(rarities, rarity)
+    end
+    table.sort(rarities)
+    
+    -- Add pets grouped by rarity
+    for _, rarity in ipairs(rarities) do
+        local pets = petsByRarity[rarity]
+        
+        -- Sort pet names for consistent output (optional)
+        local petNames = {}
+        for petName, _ in pairs(pets) do
+            table.insert(petNames, petName)
+        end
+        table.sort(petNames)
+        
+        for _, petName in ipairs(petNames) do
+            local eggName = pets[petName]
+            result = result .. petName .. " = " .. eggName .. "\n"
+        end
+        
+        result = result .. "\n"
+    end
+    
     return result
 end
 
-local eggDataString = extractEggData()
-print("\nExtracted Egg Data in Lua format:")
-print(eggDataString)
+local petDataString = extractPetsByRarity()
+print("\nExtracted Pet Data by Rarity:")
+print(petDataString)
 
 -- Try to copy to clipboard
 local success, err = pcall(function()
-    setclipboard(eggDataString)
+    setclipboard(petDataString)
 end)
 
 if success then
-    print("Egg data copied to clipboard!")
+    print("Pet data copied to clipboard!")
 else
     print("Failed to copy to clipboard: " .. tostring(err))
     
     -- Try writing to a file if clipboard fails
     pcall(function()
-        writefile("EggData.lua", eggDataString)
-        print("Data written to EggData.lua")
+        writefile("PetsByRarity.txt", petDataString)
+        print("Data written to PetsByRarity.txt")
     end)
 end
