@@ -57,30 +57,75 @@ local function extractPetsByRarity()
     -- Format the output
     local result = ""
     
-    -- Sort rarities for consistent output (optional)
-    local rarities = {}
-    for rarity, _ in pairs(petsByRarity) do
-        table.insert(rarities, rarity)
-    end
-    table.sort(rarities)
+    -- Define rarity order (add any missing rarities to this list)
+    local rarityOrder = {
+        "Basic", 
+        "Advanced", 
+        "Rare", 
+        "Epic", 
+        "Unique", 
+        "Legendary", 
+        "Mythical", 
+        "Divine", 
+        "Godly"
+    }
     
-    -- Add pets grouped by rarity
-    for _, rarity in ipairs(rarities) do
+    -- Add pets grouped by rarity in the specified order
+    for _, rarity in ipairs(rarityOrder) do
         local pets = petsByRarity[rarity]
         
-        -- Sort pet names for consistent output (optional)
-        local petNames = {}
-        for petName, _ in pairs(pets) do
-            table.insert(petNames, petName)
+        if pets and next(pets) then
+            -- Add rarity header
+            result = result .. rarity .. "\n"
+            
+            -- Sort pet names for consistent output
+            local petNames = {}
+            for petName, _ in pairs(pets) do
+                table.insert(petNames, petName)
+            end
+            table.sort(petNames)
+            
+            -- Add each pet with its egg
+            for _, petName in ipairs(petNames) do
+                local eggName = pets[petName]
+                result = result .. petName .. " = " .. eggName .. "\n"
+            end
+            
+            -- Add a blank line after each rarity group
+            result = result .. "\n"
         end
-        table.sort(petNames)
-        
-        for _, petName in ipairs(petNames) do
-            local eggName = pets[petName]
-            result = result .. petName .. " = " .. eggName .. "\n"
+    end
+    
+    -- Check for any rarities not in our predefined order
+    for rarity, pets in pairs(petsByRarity) do
+        local found = false
+        for _, orderedRarity in ipairs(rarityOrder) do
+            if rarity == orderedRarity then
+                found = true
+                break
+            end
         end
         
-        result = result .. "\n"
+        if not found then
+            -- Add rarity header for this additional rarity
+            result = result .. rarity .. "\n"
+            
+            -- Sort pet names
+            local petNames = {}
+            for petName, _ in pairs(pets) do
+                table.insert(petNames, petName)
+            end
+            table.sort(petNames)
+            
+            -- Add each pet with its egg
+            for _, petName in ipairs(petNames) do
+                local eggName = pets[petName]
+                result = result .. petName .. " = " .. eggName .. "\n"
+            end
+            
+            -- Add a blank line
+            result = result .. "\n"
+        end
     end
     
     return result
